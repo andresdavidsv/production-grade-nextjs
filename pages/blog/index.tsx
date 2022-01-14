@@ -32,6 +32,29 @@ Blog.defaultProps = {
   posts: [],
 }
 
+export async function getStaticProps(ctx) {
+  const postsDirectory = path.join(process.cwd(), 'posts')
+  const filenames = fs.readdirSync(postsDirectory)
+  // check that preview boolean
+  const cmsPosts = ctx.preview ? postsFromCMS.draft : postsFromCMS.published
+  const filePosts = filenames.map((filename) => {
+    const filePath = path.join(postsDirectory, filename)
+    return fs.readFileSync(filePath, 'utf8')
+  })
+
+  const posts = orderby(
+    [...cmsPosts, ...filePosts].map((content) => {
+      const { data } = matter(content)
+      return data
+    }),
+    ['publishedOn'],
+    ['desc'],
+  )
+
+  return { props: { posts } }
+}
+
+
 export default Blog
 
 /**
